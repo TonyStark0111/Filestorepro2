@@ -18,19 +18,19 @@ from logging.handlers import RotatingFileHandler
 #rohit_1888 on Tg
 #--------------------------------------------
 #Bot token @Botfather
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7409495927:AAF9WCkzjMIbnKCBY4KgpgJ0MxG1U-u_aJg")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7159464896:AAE_zxFCfzIzx2I4WxYO8Y8vNr2qpXbUtAw")
 APP_ID = int(os.environ.get("APP_ID", "15529802")) #Your API ID from my.telegram.org
 API_HASH = os.environ.get("API_HASH", "92bcb6aa798a6f1feadbc917fccb54d3") #Your API Hash from my.telegram.org
 #--------------------------------------------
 
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002162795137")) #Your db channel Id
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002205750726")) #Your db channel Id
 OWNER = os.environ.get("OWNER", "MrXeonTG") # Owner username without @
 OWNER_ID = int(os.environ.get("OWNER_ID", "821215952")) # Owner id
 #--------------------------------------------
 PORT = os.environ.get("PORT", "8001")
 #--------------------------------------------
-DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://SeriesXeonbot:SeriesXeonbot@cluster0.sxdov5x.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-DB_NAME = os.environ.get("DATABASE_NAME", "XFLIX")
+DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://anuimdbfilterclonedb:anuimdbfilterclonedb@cluster0.xj5sz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+DB_NAME = os.environ.get("DATABASE_NAME", "Xeonfilestore01")
 #--------------------------------------------
 FSUB_LINK_EXPIRY = int(os.getenv("FSUB_LINK_EXPIRY", "0"))  # 0 means no expiry
 BAN_SUPPORT = os.environ.get("BAN_SUPPORT", "https://t.me/CodeflixSupport")
