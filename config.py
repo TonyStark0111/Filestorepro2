@@ -29,7 +29,7 @@ OWNER_ID = int(os.environ.get("OWNER_ID", "821215952")) # Owner id
 #--------------------------------------------
 PORT = os.environ.get("PORT", "8001")
 #--------------------------------------------
-DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://anuimdbfilterclonedb:anuimdbfilterclonedb@cluster0.xj5sz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+DB_URI = os.environ.get("DATABASE_URL", "mongodb+srv://FileStorexeon1:FileStorexeon1@cluster0.gu4nrph.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 DB_NAME = os.environ.get("DATABASE_NAME", "Xeonfilestore01")
 #--------------------------------------------
 FSUB_LINK_EXPIRY = int(os.getenv("FSUB_LINK_EXPIRY", "0"))  # 0 means no expiry
