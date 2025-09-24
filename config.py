@@ -27,7 +27,7 @@ CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002205750726")) #Your db channe
 OWNER = os.environ.get("OWNER", "MrXeon") # Owner username without @
 OWNER_ID = int(os.environ.get("OWNER_ID", "821215952")) # Owner id
 #--------------------------------------------
-PORT = os.environ.get("PORT", "8001")
+PORT = os.environ.get("PORT", "8000")
 #--------------------------------------------
 DB_URI = os.environ.get("DATABASE_URL", "")
 DB_NAME = os.environ.get("DATABASE_NAME", "MovieSeries")
