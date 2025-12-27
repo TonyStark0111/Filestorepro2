@@ -45,11 +45,11 @@ FORCE_PIC = os.environ.get("FORCE_PIC", "https://telegra.ph/file/e292b12890b8b4b
 HELP_TXT = "<b><blockquote>ᴛʜɪs ɪs ᴀɴ ғɪʟᴇ ᴛᴏ ʟɪɴᴋ ʙᴏᴛ ᴡᴏʀᴋ ғᴏʀ @xeonflixFlix\n\n❏ ʙᴏᴛ ᴄᴏᴍᴍᴀɴᴅs\n├/start : sᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ\n├/about : ᴏᴜʀ Iɴғᴏʀᴍᴀᴛɪᴏɴ\n└/help : ʜᴇʟᴘ ʀᴇʟᴀᴛᴇᴅ ʙᴏᴛ\n\n sɪᴍᴘʟʏ ᴄʟɪᴄᴋ ᴏɴ ʟɪɴᴋ ᴀɴᴅ sᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ ᴊᴏɪɴ ʙᴏᴛʜ ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ ᴛʜᴀᴛs ɪᴛ.....!\n\n ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ <a href=https://t.me/xeonflixadmin>ᴛʜɪs ᴘᴇʀsᴏɴ​</a></blockquote></b>"
 
 ABOUT_TXT = """<b>Dᴇᴠᴇʟᴏᴘᴇʀ: <a href='tg://settings'>ᴛʜɪs ᴘᴇʀsᴏɴ</a>​
-<blockquote expandable>›› ᴍᴏᴠɪᴇs: <a href='https://t.me/CineFlixSaga'>ᴄɪɴᴇꜰʟɪx ꜱᴀɢᴀ</a>
-›› ᴡᴇʙsᴇʀɪᴇs: <a href='https://t.me/SeriesFlixSaga'>ꜱᴇʀɪᴇꜱꜰʟɪx ꜱᴀɢᴀ</a>
-›› ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ: <a href='https://t.me/AnimeFlixSaga'>ᴀɴɪᴍᴇ ᴡᴏʀʟᴅ</a>
-›› ᴄᴀʀᴛᴏᴏɴ ᴄʜᴀɴɴᴇʟ: <a href='https://t.me/ToonsWorldSga'>ᴛᴏᴏɴꜱ ᴡᴏʀʟᴅ</a>
-›› ᴀᴅᴜʟᴛ ᴄʜᴀɴɴᴇʟs: <a href='https://t.me/cornxvilla'>ᴄᴏʀɴʜᴜʙ</a>
+<blockquote expandable>›› ᴍᴏᴠɪᴇs: <a href='https://t.me/CineFlix_Saga'>ᴄɪɴᴇꜰʟɪx ꜱᴀɢᴀ</a>
+›› ᴡᴇʙsᴇʀɪᴇs: <a href='https://t.me/SeriesFlix_Saga'>ꜱᴇʀɪᴇꜱꜰʟɪx ꜱᴀɢᴀ</a>
+›› ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ: <a href='https://t.me/Animexeon_Saga'>ᴀɴɪᴍᴇ ᴡᴏʀʟᴅ</a>
+›› ᴄᴀʀᴛᴏᴏɴ ᴄʜᴀɴɴᴇʟ: <a href='https://t.me/ToonsWorld_Saga'>ᴛᴏᴏɴꜱ ᴡᴏʀʟᴅ</a>
+›› ᴀᴅᴜʟᴛ ᴄʜᴀɴɴᴇʟs: <a href='https://t.me/CulturedxSaga'>ᴄᴏʀɴʜᴜʙ</a>
 ›› ᴄᴏᴍᴍᴜɴɪᴛʏ: <a href='https://t.me/xeonflix'>xᴇᴏɴꜰʟɪx</b></blockquote>"""
 
 #--------------------------------------------
