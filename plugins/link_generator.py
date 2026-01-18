@@ -7,83 +7,245 @@ from pyrogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from asyncio import TimeoutError
 from helper_func import encode, get_message_id, admin
 
+async def choose_channel(client: Client, message: Message, text: str):
+    """Let admin choose which channel to use"""
+    if not client.secondary_channel:
+        return "primary"  # Only primary available
+    
+    keyboard = ReplyKeyboardMarkup(
+        [
+            ["📌 Primary Channel"],
+            ["📂 Secondary Channel"],
+            ["❌ Cancel"]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    
+    await message.reply(text, reply_markup=keyboard)
+    
+    try:
+        response = await client.listen(
+            chat_id=message.chat.id,
+            filters=filters.text & filters.regex(r"^(📌 Primary Channel|📂 Secondary Channel|❌ Cancel)$"),
+            timeout=30
+        )
+        
+        if response.text == "❌ Cancel":
+            await message.reply("❌ Operation cancelled.", reply_markup=ReplyKeyboardRemove())
+            return None
+        elif response.text == "📂 Secondary Channel":
+            return "secondary"
+        else:
+            return "primary"
+            
+    except TimeoutError:
+        await message.reply("⏰ Timed out. Operation cancelled.", reply_markup=ReplyKeyboardRemove())
+        return None
+
 @Bot.on_message(filters.private & admin & filters.command('batch'))
 async def batch(client: Client, message: Message):
+    # Choose channel
+    channel_type = await choose_channel(client, message, "📌 Select channel for batch operation:")
+    if channel_type is None:
+        return
+    
+    if channel_type == "secondary" and not client.secondary_channel:
+        await message.reply("❌ Secondary channel not configured.", reply_markup=ReplyKeyboardRemove())
+        return
+    
+    target_channel = client.secondary_channel if channel_type == "secondary" else client.db_channel
+    
+    # Get first message
     while True:
         try:
-            first_message = await client.ask(text = "Forward the First Message from DB Channel (with Quotes)..\n\nor Send the DB Channel Post Link", chat_id = message.from_user.id, filters=(filters.forwarded | (filters.text & ~filters.forwarded)), timeout=60)
-        except:
+            first_message = await client.ask(
+                text=f"📤 Forward the First Message from {channel_type.capitalize()} DB Channel (with Quotes)..\n\nor Send the DB Channel Post Link",
+                chat_id=message.from_user.id,
+                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                timeout=60
+            )
+        except TimeoutError:
+            await message.reply("⏰ Operation timed out.", reply_markup=ReplyKeyboardRemove())
             return
+        
         f_msg_id = await get_message_id(client, first_message)
         if f_msg_id:
-            break
+            # Check if forwarded from correct channel
+            if first_message.forward_from_chat:
+                if channel_type == "primary" and first_message.forward_from_chat.id == client.db_channel.id:
+                    break
+                elif channel_type == "secondary" and first_message.forward_from_chat.id == client.secondary_channel.id:
+                    break
+            
+            await first_message.reply(f"❌ Error\n\nThis message is not from {channel_type} DB Channel", quote=True)
         else:
-            await first_message.reply("❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is taken from DB Channel", quote = True)
-            continue
+            await first_message.reply(f"❌ Error\n\nCould not get message ID from {channel_type} channel", quote=True)
 
+    # Get last message
     while True:
         try:
-            second_message = await client.ask(text = "Forward the Last Message from DB Channel (with Quotes)..\nor Send the DB Channel Post link", chat_id = message.from_user.id, filters=(filters.forwarded | (filters.text & ~filters.forwarded)), timeout=60)
-        except:
+            second_message = await client.ask(
+                text=f"📤 Forward the Last Message from {channel_type.capitalize()} DB Channel (with Quotes)..\nor Send the DB Channel Post link",
+                chat_id=message.from_user.id,
+                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                timeout=60
+            )
+        except TimeoutError:
+            await message.reply("⏰ Operation timed out.", reply_markup=ReplyKeyboardRemove())
             return
+        
         s_msg_id = await get_message_id(client, second_message)
         if s_msg_id:
-            break
+            # Check if forwarded from correct channel
+            if second_message.forward_from_chat:
+                if channel_type == "primary" and second_message.forward_from_chat.id == client.db_channel.id:
+                    break
+                elif channel_type == "secondary" and second_message.forward_from_chat.id == client.secondary_channel.id:
+                    break
+            
+            await second_message.reply(f"❌ Error\n\nThis message is not from {channel_type} DB Channel", quote=True)
         else:
-            await second_message.reply("❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is taken from DB Channel", quote = True)
-            continue
+            await second_message.reply(f"❌ Error\n\nCould not get message ID from {channel_type} channel", quote=True)
 
-
-    string = f"get-{f_msg_id * abs(client.db_channel.id)}-{s_msg_id * abs(client.db_channel.id)}"
+    # Create link
+    channel_multiplier = abs(target_channel.id)
+    string = f"get-{f_msg_id * channel_multiplier}-{s_msg_id * channel_multiplier}"
+    
+    # Add prefix for secondary channel
+    if channel_type == "secondary":
+        string = f"sec-{string}"
+    
     base64_string = await encode(string)
     link = f"https://t.me/{client.username}?start={base64_string}"
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await second_message.reply_text(f"<b>Here is your link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
-
+    
+    channel_link = f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}"
+    
+    reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')],
+        [InlineKeyboardButton("📺 View Channel", url=channel_link)]
+    ])
+    
+    await second_message.reply_text(
+        f"<b>✅ {channel_type.capitalize()} Channel Batch Link Created</b>\n\n"
+        f"<b>Channel:</b> {target_channel.title}\n"
+        f"<b>From ID:</b> {f_msg_id}\n"
+        f"<b>To ID:</b> {s_msg_id}\n"
+        f"<b>Channel Type:</b> {channel_type.capitalize()}\n\n"
+        f"<code>{link}</code>",
+        quote=True,
+        reply_markup=reply_markup
+    )
+    
+    await message.reply("✅ Batch link created!", reply_markup=ReplyKeyboardRemove())
 
 @Bot.on_message(filters.private & admin & filters.command('genlink'))
 async def link_generator(client: Client, message: Message):
+    # Choose channel
+    channel_type = await choose_channel(client, message, "📌 Select channel for single link:")
+    if channel_type is None:
+        return
+    
+    if channel_type == "secondary" and not client.secondary_channel:
+        await message.reply("❌ Secondary channel not configured.", reply_markup=ReplyKeyboardRemove())
+        return
+    
+    target_channel = client.secondary_channel if channel_type == "secondary" else client.db_channel
+    
+    # Get message
     while True:
         try:
-            channel_message = await client.ask(text = "Forward Message from the DB Channel (with Quotes)..\nor Send the DB Channel Post link", chat_id = message.from_user.id, filters=(filters.forwarded | (filters.text & ~filters.forwarded)), timeout=60)
-        except:
+            channel_message = await client.ask(
+                text=f"📤 Forward Message from {channel_type.capitalize()} DB Channel (with Quotes)..\nor Send the DB Channel Post link",
+                chat_id=message.from_user.id,
+                filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+                timeout=60
+            )
+        except TimeoutError:
+            await message.reply("⏰ Operation timed out.", reply_markup=ReplyKeyboardRemove())
             return
+        
         msg_id = await get_message_id(client, channel_message)
         if msg_id:
-            break
+            # Check if forwarded from correct channel
+            if channel_message.forward_from_chat:
+                if channel_type == "primary" and channel_message.forward_from_chat.id == client.db_channel.id:
+                    break
+                elif channel_type == "secondary" and channel_message.forward_from_chat.id == client.secondary_channel.id:
+                    break
+            
+            await channel_message.reply(f"❌ Error\n\nThis message is not from {channel_type} DB Channel", quote=True)
         else:
-            await channel_message.reply("❌ Error\n\nthis Forwarded Post is not from my DB Channel or this Link is not taken from DB Channel", quote = True)
-            continue
+            await channel_message.reply(f"❌ Error\n\nCould not get message ID from {channel_type} channel", quote=True)
 
-    base64_string = await encode(f"get-{msg_id * abs(client.db_channel.id)}")
+    # Create link
+    channel_multiplier = abs(target_channel.id)
+    string = f"get-{msg_id * channel_multiplier}"
+    
+    # Add prefix for secondary channel
+    if channel_type == "secondary":
+        string = f"sec-{string}"
+    
+    base64_string = await encode(string)
     link = f"https://t.me/{client.username}?start={base64_string}"
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await channel_message.reply_text(f"<b>Here is your link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
-
+    
+    channel_link = f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}"
+    
+    reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')],
+        [InlineKeyboardButton("📺 View Channel", url=channel_link)]
+    ])
+    
+    await channel_message.reply_text(
+        f"<b>✅ {channel_type.capitalize()} Channel Link Created</b>\n\n"
+        f"<b>Channel:</b> {target_channel.title}\n"
+        f"<b>Message ID:</b> {msg_id}\n"
+        f"<b>Channel Type:</b> {channel_type.capitalize()}\n\n"
+        f"<code>{link}</code>",
+        quote=True,
+        reply_markup=reply_markup
+    )
+    
+    await message.reply("✅ Single link created!", reply_markup=ReplyKeyboardRemove())
 
 @Bot.on_message(filters.private & admin & filters.command("custom_batch"))
 async def custom_batch(client: Client, message: Message):
+    # Choose channel
+    channel_type = await choose_channel(client, message, "📌 Select channel for custom batch:")
+    if channel_type is None:
+        return
+    
+    if channel_type == "secondary" and not client.secondary_channel:
+        await message.reply("❌ Secondary channel not configured.", reply_markup=ReplyKeyboardRemove())
+        return
+    
+    target_channel = client.secondary_channel if channel_type == "secondary" else client.db_channel
+    
     collected = []
-    STOP_KEYBOARD = ReplyKeyboardMarkup([["STOP"]], resize_keyboard=True)
+    STOP_KEYBOARD = ReplyKeyboardMarkup([["🛑 STOP"]], resize_keyboard=True)
 
-    await message.reply("Send all messages you want to include in batch.\n\nPress STOP when you're done.", reply_markup=STOP_KEYBOARD)
+    await message.reply(
+        f"📤 Send all messages you want to include in {channel_type} channel batch.\n\nPress 🛑 STOP when you're done.",
+        reply_markup=STOP_KEYBOARD
+    )
 
     while True:
         try:
             user_msg = await client.ask(
                 chat_id=message.chat.id,
-                text="Waiting for files/messages...\nPress STOP to finish.",
+                text=f"⏳ Waiting for files/messages...\nPress 🛑 STOP to finish. ({len(collected)} collected)",
                 timeout=60
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             break
 
-        if user_msg.text and user_msg.text.strip().upper() == "STOP":
+        if user_msg.text and user_msg.text.strip().upper() == "🛑 STOP":
             break
 
         try:
-            sent = await user_msg.copy(client.db_channel.id, disable_notification=True)
+            sent = await user_msg.copy(target_channel.id, disable_notification=True)
             collected.append(sent.id)
+            await message.reply(f"✅ Added message #{len(collected)} to {channel_type} channel")
         except Exception as e:
             await message.reply(f"❌ Failed to store a message:\n<code>{e}</code>")
             continue
@@ -94,11 +256,104 @@ async def custom_batch(client: Client, message: Message):
         await message.reply("❌ No messages were added to batch.")
         return
 
-    start_id = collected[0] * abs(client.db_channel.id)
-    end_id = collected[-1] * abs(client.db_channel.id)
+    # Create link
+    channel_multiplier = abs(target_channel.id)
+    start_id = collected[0] * channel_multiplier
+    end_id = collected[-1] * channel_multiplier
     string = f"get-{start_id}-{end_id}"
+    
+    # Add prefix for secondary channel
+    if channel_type == "secondary":
+        string = f"sec-{string}"
+    
     base64_string = await encode(string)
     link = f"https://t.me/{client.username}?start={base64_string}"
 
+    channel_link = f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}"
+    
+    reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')],
+        [InlineKeyboardButton("📺 View Channel", url=channel_link)]
+    ])
+    
+    await message.reply(
+        f"<b>✅ {channel_type.capitalize()} Channel Custom Batch Link Created</b>\n\n"
+        f"<b>Channel:</b> {target_channel.title}\n"
+        f"<b>Total Files:</b> {len(collected)}\n"
+        f"<b>From ID:</b> {collected[0]}\n"
+        f"<b>To ID:</b> {collected[-1]}\n"
+        f"<b>Channel Type:</b> {channel_type.capitalize()}\n\n"
+        f"<code>{link}</code>",
+        reply_markup=reply_markup
+    )
+
+# New commands for direct secondary channel operations
+@Bot.on_message(filters.private & admin & filters.command('batch_sec'))
+async def batch_secondary(client: Client, message: Message):
+    if not client.secondary_channel:
+        return await message.reply("❌ Secondary channel not configured.")
+    
+    # Create a fake message to use existing batch function
+    msg = await message.reply("🔄 Creating batch link for secondary channel...")
+    channel_type = "secondary"
+    target_channel = client.secondary_channel
+    
+    # Get first message
+    first = await client.ask(
+        text="📤 Forward the First Message from Secondary DB Channel (with Quotes)..\n\nor Send the DB Channel Post Link",
+        chat_id=message.from_user.id,
+        filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+        timeout=60
+    )
+    
+    f_msg_id = await get_message_id(client, first)
+    if not f_msg_id:
+        return await first.reply("❌ Could not get message ID")
+    
+    # Get last message
+    second = await client.ask(
+        text="📤 Forward the Last Message from Secondary DB Channel (with Quotes)..\nor Send the DB Channel Post link",
+        chat_id=message.from_user.id,
+        filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+        timeout=60
+    )
+    
+    s_msg_id = await get_message_id(client, second)
+    if not s_msg_id:
+        return await second.reply("❌ Could not get message ID")
+    
+    # Create link
+    string = f"sec-get-{f_msg_id * abs(target_channel.id)}-{s_msg_id * abs(target_channel.id)}"
+    base64_string = await encode(string)
+    link = f"https://t.me/{client.username}?start={base64_string}"
+    
     reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await message.reply(f"<b>Here is your custom batch link:</b>\n\n{link}", reply_markup=reply_markup)
+    await second.reply_text(f"<b>Here is your secondary channel batch link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
+    await msg.delete()
+
+@Bot.on_message(filters.private & admin & filters.command('genlink_sec'))
+async def genlink_secondary(client: Client, message: Message):
+    if not client.secondary_channel:
+        return await message.reply("❌ Secondary channel not configured.")
+    
+    msg = await message.reply("🔄 Creating single link for secondary channel...")
+    
+    first = await client.ask(
+        text="📤 Forward Message from Secondary DB Channel (with Quotes)..\nor Send the DB Channel Post link",
+        chat_id=message.from_user.id,
+        filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
+        timeout=60
+    )
+    
+    msg_id = await get_message_id(client, first)
+    if not msg_id:
+        return await first.reply("❌ Could not get message ID")
+    
+    # Create link
+    string = f"sec-get-{msg_id * abs(client.secondary_channel.id)}"
+    base64_string = await encode(string)
+    link = f"https://t.me/{client.username}?start={base64_string}"
+    
+    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
+    await first.reply_text(f"<b>Here is your secondary channel link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
+    await msg.delete()
