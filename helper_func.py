@@ -83,20 +83,32 @@ async def decode(base64_string):
     string = string_bytes.decode("ascii")
     return string
 
-async def get_messages(client, message_ids):
+async def get_messages(client, message_ids, channel="primary"):
+    """
+    Fetch messages from either primary or secondary DB channel.
+    channel: "primary" or "secondary"
+    """
+    if channel == "secondary" and client.secondary_channel:
+        target_channel = client.secondary_channel
+    else:
+        target_channel = client.db_channel
+    
+    if not target_channel:
+        return []
+
     messages = []
     total_messages = 0
     while total_messages != len(message_ids):
         temb_ids = message_ids[total_messages:total_messages+200]
         try:
             msgs = await client.get_messages(
-                chat_id=client.db_channel.id,
+                chat_id=target_channel.id,
                 message_ids=temb_ids
             )
         except FloodWait as e:
             await asyncio.sleep(e.x)
             msgs = await client.get_messages(
-                chat_id=client.db_channel.id,
+                chat_id=target_channel.id,
                 message_ids=temb_ids
             )
         except:
@@ -107,7 +119,11 @@ async def get_messages(client, message_ids):
 
 async def get_message_id(client, message):
     if message.forward_from_chat:
+        # Check if from primary channel
         if message.forward_from_chat.id == client.db_channel.id:
+            return message.forward_from_message_id
+        # Check if from secondary channel
+        elif client.secondary_channel and message.forward_from_chat.id == client.secondary_channel.id:
             return message.forward_from_message_id
         else:
             return 0
@@ -121,10 +137,18 @@ async def get_message_id(client, message):
         channel_id = matches.group(1)
         msg_id = int(matches.group(2))
         if channel_id.isdigit():
+            # Check primary channel
             if f"-100{channel_id}" == str(client.db_channel.id):
                 return msg_id
+            # Check secondary channel
+            elif client.secondary_channel and f"-100{channel_id}" == str(client.secondary_channel.id):
+                return msg_id
         else:
+            # Check primary channel by username
             if channel_id == client.db_channel.username:
+                return msg_id
+            # Check secondary channel by username
+            elif client.secondary_channel and channel_id == client.secondary_channel.username:
                 return msg_id
     else:
         return 0
