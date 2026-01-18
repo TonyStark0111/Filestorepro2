@@ -66,37 +66,57 @@ async def start_command(client: Client, message: Message):
             return
 
         string = await decode(base64_string)
+        
+        # Check if it's a secondary channel link
+        if string.startswith("sec-"):
+            channel_type = "secondary"
+            string = string[4:]  # Remove 'sec-' prefix
+            if not client.secondary_channel:
+                return await message.reply("⚠️ Secondary channel not available. Please contact admin.")
+            target_channel = client.secondary_channel
+        else:
+            channel_type = "primary"
+            target_channel = client.db_channel
+        
         argument = string.split("-")
 
         ids = []
-        if len(argument) == 3:
+        if len(argument) == 3:  # Batch: get-start-end
             try:
-                start = int(int(argument[1]) / abs(client.db_channel.id))
-                end = int(int(argument[2]) / abs(client.db_channel.id))
+                start = int(int(argument[1]) / abs(target_channel.id))
+                end = int(int(argument[2]) / abs(target_channel.id))
                 ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
             except Exception as e:
-                print(f"Error decoding IDs: {e}")
-                return
+                print(f"Error decoding batch IDs: {e}")
+                return await message.reply("❌ Invalid link format.")
 
-        elif len(argument) == 2:
+        elif len(argument) == 2:  # Single: get-id
             try:
-                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+                ids = [int(int(argument[1]) / abs(target_channel.id))]
             except Exception as e:
-                print(f"Error decoding ID: {e}")
-                return
+                print(f"Error decoding single ID: {e}")
+                return await message.reply("❌ Invalid link format.")
 
-        temp_msg = await message.reply("<b>Please wait...</b>")
+        temp_msg = await message.reply(f"<b>📥 Fetching from {channel_type} channel...</b>")
+        
         try:
-            messages = await get_messages(client, ids)
+            messages = await get_messages(client, ids, channel=channel_type)
+            if not messages:
+                await temp_msg.delete()
+                return await message.reply_text("❌ No files found. Link may be expired or invalid.")
         except Exception as e:
-            await message.reply_text("Something went wrong!")
+            await temp_msg.delete()
+            await message.reply_text("❌ Something went wrong!")
             print(f"Error getting messages: {e}")
             return
-        finally:
-            await temp_msg.delete()
 
+        await temp_msg.delete()
+        
         codeflix_msgs = []
         for msg in messages:
+            if not msg or not hasattr(msg, 'document'):
+                continue
+                
             caption = (CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, 
                                              filename=msg.document.file_name) if bool(CUSTOM_CAPTION) and bool(msg.document)
                        else ("" if not msg.caption else msg.caption.html))
@@ -116,9 +136,12 @@ async def start_command(client: Client, message: Message):
                 print(f"Failed to send message: {e}")
                 pass
 
+        if not codeflix_msgs:
+            return await message.reply("❌ No files could be sent. Please try again.")
+
         if FILE_AUTO_DELETE > 0:
             notification_msg = await message.reply(
-                f"<b>Tʜɪs Fɪʟᴇ ᴡɪʟʟ ʙᴇ Dᴇʟᴇᴛᴇᴅ ɪɴ  {get_exp_time(FILE_AUTO_DELETE)}. Pʟᴇᴀsᴇ sᴀᴠᴇ ᴏʀ ғᴏʀᴡᴀʀᴅ ɪᴛ ᴛᴏ ʏᴏᴜʀ sᴀᴠᴇᴅ ᴍᴇssᴀɢᴇs ʙᴇғᴏʀᴇ ɪᴛ ɢᴇᴛs Dᴇʟᴇᴛᴇᴅ.</b>"
+                f"<b>⏳ This file will be deleted in {get_exp_time(FILE_AUTO_DELETE)}. Please save or forward it to your saved messages before it gets deleted.</b>"
             )
 
             await asyncio.sleep(FILE_AUTO_DELETE)
@@ -137,11 +160,11 @@ async def start_command(client: Client, message: Message):
                     else None
                 )
                 keyboard = InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("ɢᴇᴛ ғɪʟᴇ ᴀɢᴀɪɴ!", url=reload_url)]]
+                    [[InlineKeyboardButton("🔄 Get file again!", url=reload_url)]]
                 ) if reload_url else None
 
                 await notification_msg.edit(
-                    "<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!\n\nᴄʟɪᴄᴋ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ ᴛᴏ ɢᴇᴛ ʏᴏᴜʀ ᴅᴇʟᴇᴛᴇᴅ ᴠɪᴅᴇᴏ / ꜰɪʟᴇ 👇</b>",
+                    "<b>✅ Your video/file is successfully deleted!\n\nClick below button to get your deleted video/file 👇</b>",
                     reply_markup=keyboard
                 )
             except Exception as e:
@@ -149,13 +172,11 @@ async def start_command(client: Client, message: Message):
     else:
         reply_markup = InlineKeyboardMarkup(
             [
-                    [InlineKeyboardButton("• ᴍᴏʀᴇ ᴄʜᴀɴɴᴇʟs •", url="https://t.me/xeonflix")],
-
-    [
-                    InlineKeyboardButton("• ᴀʙᴏᴜᴛ", callback_data = "about"),
-                    InlineKeyboardButton('ʜᴇʟᴘ •', callback_data = "help")
-
-    ]
+                [InlineKeyboardButton("• ᴍᴏʀᴇ ᴄʜᴀɴɴᴇʟs •", url="https://t.me/xeonflix")],
+                [
+                    InlineKeyboardButton("• ᴀʙᴏᴜᴛ", callback_data="about"),
+                    InlineKeyboardButton('ʜᴇʟᴘ •', callback_data="help")
+                ]
             ]
         )
         await message.reply_photo(
