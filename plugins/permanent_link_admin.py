@@ -2,15 +2,13 @@
 # Don't Remove Credit @CodeFlix_Bots, @rohit_1888
 
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 from bot import Bot
 from config import PERMANENT_LINKS, BLOGSPOT_URL, BLOGSPOT_PARAM
 from helper_func import admin
 
 @Bot.on_message(filters.private & admin & filters.command('permanent_info'))
 async def permanent_info(client: Client, message: Message):
-    """Show permanent link system information"""
-    
     if PERMANENT_LINKS and BLOGSPOT_URL:
         status = f"""✅ **PERMANENT LINK SYSTEM ACTIVE**
 
@@ -54,9 +52,7 @@ Add to config.py or environment:
 
 @Bot.on_message(filters.private & admin & filters.command('get_html'))
 async def get_html_files(client: Client, message: Message):
-    """Send HTML files for Blogspot"""
-    
-    countdown_html = '''<!DOCTYPE html>
+    html_code = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -84,8 +80,7 @@ async def get_html_files(client: Client, message: Message):
         }
     </style>
     <script type="text/javascript">
-        // SET YOUR BOT USERNAME HERE (without @)
-        const CURRENT_BOT_USERNAME = "XeonFileStoreBot";
+        const CURRENT_BOT_USERNAME = "YOUR_BOT_USERNAME";
         
         document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -102,7 +97,7 @@ async def get_html_files(client: Client, message: Message):
 
                     if (countdown <= 0) {
                         clearInterval(countdownInterval);
-                        const telegramUrl = `https://telegram.me/${CURRENT_BOT_USERNAME}?start=${linkParam}`;
+                        const telegramUrl = "https://telegram.me/" + CURRENT_BOT_USERNAME + "?start=" + linkParam;
                         window.location.href = telegramUrl;
                     }
                 }, 1000);
@@ -122,7 +117,7 @@ async def get_html_files(client: Client, message: Message):
             const linkParam = urlParams.get('Tech_VJ');
             if (linkParam) {
                 const directLink = document.getElementById('directLink');
-                directLink.href = `https://telegram.me/${CURRENT_BOT_USERNAME}?start=${linkParam}`;
+                directLink.href = "https://telegram.me/" + CURRENT_BOT_USERNAME + "?start=" + linkParam;
                 directLink.textContent = "Direct Link";
             }
         });
@@ -130,24 +125,7 @@ async def get_html_files(client: Client, message: Message):
 </body>
 </html>'''
     
-    instructions = '''📝 **INSTRUCTIONS:**
-
-1. **Replace `YOUR_BOT_USERNAME`** with your actual bot username (without @)
-2. **Upload to Blogspot:**
-   - Go to https://www.blogger.com
-   - Create new post or page
-   - Switch to HTML editor
-   - Paste the code below
-   - Publish
-3. **Get the URL** and set as `BLOGSPOT_URL` in config
-4. **When bot gets banned:**
-   - Create new bot
-   - Update bot token
-   - Change `CURRENT_BOT_USERNAME` in Blogspot HTML
-   - Save and publish
-   - All existing links will work!
-
-**HTML Code:**'''
+    instructions = "📝 **INSTRUCTIONS:**\n\n1. Replace `YOUR_BOT_USERNAME` with your bot username\n2. Upload to Blogspot\n3. Get URL and set as BLOGSPOT_URL in config\n4. When bot banned: Update username in Blogspot HTML"
     
     await message.reply_text(instructions)
-    await message.reply_text(f"```html\n{countdown_html}\n```")
+    await message.reply_text(f"```html\n{html_code}\n```")
