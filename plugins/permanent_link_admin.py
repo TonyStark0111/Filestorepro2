@@ -56,7 +56,7 @@ Add to config.py or environment:
 async def get_html_files(client: Client, message: Message):
     """Send HTML files for Blogspot"""
     
-    countdown_html = """<!DOCTYPE html>
+    countdown_html = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -128,9 +128,9 @@ async def get_html_files(client: Client, message: Message):
         });
     </script>
 </body>
-</html>"""
+</html>'''
     
-    instructions = """📝 **INSTRUCTIONS:**
+    instructions = '''📝 **INSTRUCTIONS:**
 
 1. **Replace `YOUR_BOT_USERNAME`** with your actual bot username (without @)
 2. **Upload to Blogspot:**
@@ -147,7 +147,7 @@ async def get_html_files(client: Client, message: Message):
    - Save and publish
    - All existing links will work!
 
-**HTML Code:**"""
+**HTML Code:**'''
     
     await message.reply_text(instructions)
     await message.reply_text(f"```html\n{countdown_html}\n```")
