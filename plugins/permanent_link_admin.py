@@ -85,7 +85,7 @@ async def get_html_files(client: Client, message: Message):
     </style>
     <script type="text/javascript">
         // SET YOUR BOT USERNAME HERE (without @)
-        const CURRENT_BOT_USERNAME = "YOUR_BOT_USERNAME";
+        const CURRENT_BOT_USERNAME = "XeonFileStoreBot";
         
         document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
