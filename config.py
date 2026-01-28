@@ -23,6 +23,10 @@ APP_ID = int(os.environ.get("APP_ID", "15529802")) #Your API ID from my.telegram
 API_HASH = os.environ.get("API_HASH", "92bcb6aa798a6f1feadbc917fccb54d3") #Your API Hash from my.telegram.org
 #--------------------------------------------
 
+# Permanent Link System (VJ Style)
+PERMANENT_LINKS = os.environ.get("PERMANENT_LINKS", "True") == "True"
+BLOGSPOT_URL = os.environ.get("BLOGSPOT_URL", "https://xeonflix.blogspot.com/2026/01/bot-redirect.html")
+BLOGSPOT_PARAM = os.environ.get("BLOGSPOT_PARAM", "Tech_VJ")
 CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002205750726"))
 SECONDARY_CHANNEL_ID = int(os.environ.get("SECONDARY_CHANNEL_ID", "-1003120008287"))  # Secondary channel
 OWNER = os.environ.get("OWNER", "MrXeon") # Owner username without @
