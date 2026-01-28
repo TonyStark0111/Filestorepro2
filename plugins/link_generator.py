@@ -6,6 +6,21 @@ from bot import Bot
 from pyrogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from asyncio import TimeoutError
 from helper_func import encode, get_message_id, admin
+from config import PERMANENT_LINKS, BLOGSPOT_URL, BLOGSPOT_PARAM
+
+def generate_link(base64_string, client):
+    """Generate link - permanent for batch/genlink, direct for channel_post"""
+    if PERMANENT_LINKS and BLOGSPOT_URL:
+        return f"{BLOGSPOT_URL}?{BLOGSPOT_PARAM}={base64_string}"
+    else:
+        return f"https://t.me/{client.username}?start={base64_string}"
+
+def get_link_type():
+    """Get link type description"""
+    if PERMANENT_LINKS and BLOGSPOT_URL:
+        return "Permanent"
+    else:
+        return "Direct"
 
 async def choose_channel(client: Client, message: Message, text: str):
     """Let admin choose which channel to use"""
@@ -117,17 +132,23 @@ async def batch(client: Client, message: Message):
         string = f"sec-{string}"
     
     base64_string = await encode(string)
-    link = f"https://t.me/{client.username}?start={base64_string}"
+    link = generate_link(base64_string, client)
+    link_type = get_link_type()
     
-    channel_link = f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}"
+    # Show link type info
+    if link_type == "Permanent":
+        link_info = "🔗 **Permanent Link** - Will work even if bot gets banned"
+    else:
+        link_info = "🤖 **Direct Link** - Will stop working if bot gets banned"
     
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')],
-        [InlineKeyboardButton("📺 View Channel", url=channel_link)]
+        [InlineKeyboardButton("📺 View Channel", url=f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}")]
     ])
     
     await second_message.reply_text(
         f"<b>✅ {channel_type.capitalize()} Channel Batch Link Created</b>\n\n"
+        f"<b>{link_info}</b>\n\n"
         f"<b>Channel:</b> {target_channel.title}\n"
         f"<b>From ID:</b> {f_msg_id}\n"
         f"<b>To ID:</b> {s_msg_id}\n"
@@ -187,17 +208,23 @@ async def link_generator(client: Client, message: Message):
         string = f"sec-{string}"
     
     base64_string = await encode(string)
-    link = f"https://t.me/{client.username}?start={base64_string}"
+    link = generate_link(base64_string, client)
+    link_type = get_link_type()
     
-    channel_link = f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}"
+    # Show link type info
+    if link_type == "Permanent":
+        link_info = "🔗 **Permanent Link** - Will work even if bot gets banned"
+    else:
+        link_info = "🤖 **Direct Link** - Will stop working if bot gets banned"
     
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')],
-        [InlineKeyboardButton("📺 View Channel", url=channel_link)]
+        [InlineKeyboardButton("📺 View Channel", url=f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}")]
     ])
     
     await channel_message.reply_text(
         f"<b>✅ {channel_type.capitalize()} Channel Link Created</b>\n\n"
+        f"<b>{link_info}</b>\n\n"
         f"<b>Channel:</b> {target_channel.title}\n"
         f"<b>Message ID:</b> {msg_id}\n"
         f"<b>Channel Type:</b> {channel_type.capitalize()}\n\n"
@@ -267,17 +294,23 @@ async def custom_batch(client: Client, message: Message):
         string = f"sec-{string}"
     
     base64_string = await encode(string)
-    link = f"https://t.me/{client.username}?start={base64_string}"
-
-    channel_link = f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}"
+    link = generate_link(base64_string, client)
+    link_type = get_link_type()
     
+    # Show link type info
+    if link_type == "Permanent":
+        link_info = "🔗 **Permanent Link** - Will work even if bot gets banned"
+    else:
+        link_info = "🤖 **Direct Link** - Will stop working if bot gets banned"
+
     reply_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')],
-        [InlineKeyboardButton("📺 View Channel", url=channel_link)]
+        [InlineKeyboardButton("📺 View Channel", url=f"https://t.me/{target_channel.username}" if target_channel.username else f"https://t.me/c/{str(target_channel.id)[4:]}" if str(target_channel.id).startswith('-100') else f"https://t.me/{target_channel.id}")]
     ])
     
     await message.reply(
         f"<b>✅ {channel_type.capitalize()} Channel Custom Batch Link Created</b>\n\n"
+        f"<b>{link_info}</b>\n\n"
         f"<b>Channel:</b> {target_channel.title}\n"
         f"<b>Total Files:</b> {len(collected)}\n"
         f"<b>From ID:</b> {collected[0]}\n"
@@ -286,74 +319,3 @@ async def custom_batch(client: Client, message: Message):
         f"<code>{link}</code>",
         reply_markup=reply_markup
     )
-
-# New commands for direct secondary channel operations
-@Bot.on_message(filters.private & admin & filters.command('batch_sec'))
-async def batch_secondary(client: Client, message: Message):
-    if not client.secondary_channel:
-        return await message.reply("❌ Secondary channel not configured.")
-    
-    # Create a fake message to use existing batch function
-    msg = await message.reply("🔄 Creating batch link for secondary channel...")
-    channel_type = "secondary"
-    target_channel = client.secondary_channel
-    
-    # Get first message
-    first = await client.ask(
-        text="📤 Forward the First Message from Secondary DB Channel (with Quotes)..\n\nor Send the DB Channel Post Link",
-        chat_id=message.from_user.id,
-        filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-        timeout=60
-    )
-    
-    f_msg_id = await get_message_id(client, first)
-    if not f_msg_id:
-        return await first.reply("❌ Could not get message ID")
-    
-    # Get last message
-    second = await client.ask(
-        text="📤 Forward the Last Message from Secondary DB Channel (with Quotes)..\nor Send the DB Channel Post link",
-        chat_id=message.from_user.id,
-        filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-        timeout=60
-    )
-    
-    s_msg_id = await get_message_id(client, second)
-    if not s_msg_id:
-        return await second.reply("❌ Could not get message ID")
-    
-    # Create link
-    string = f"sec-get-{f_msg_id * abs(target_channel.id)}-{s_msg_id * abs(target_channel.id)}"
-    base64_string = await encode(string)
-    link = f"https://t.me/{client.username}?start={base64_string}"
-    
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await second.reply_text(f"<b>Here is your secondary channel batch link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
-    await msg.delete()
-
-@Bot.on_message(filters.private & admin & filters.command('genlink_sec'))
-async def genlink_secondary(client: Client, message: Message):
-    if not client.secondary_channel:
-        return await message.reply("❌ Secondary channel not configured.")
-    
-    msg = await message.reply("🔄 Creating single link for secondary channel...")
-    
-    first = await client.ask(
-        text="📤 Forward Message from Secondary DB Channel (with Quotes)..\nor Send the DB Channel Post link",
-        chat_id=message.from_user.id,
-        filters=(filters.forwarded | (filters.text & ~filters.forwarded)),
-        timeout=60
-    )
-    
-    msg_id = await get_message_id(client, first)
-    if not msg_id:
-        return await first.reply("❌ Could not get message ID")
-    
-    # Create link
-    string = f"sec-get-{msg_id * abs(client.secondary_channel.id)}"
-    base64_string = await encode(string)
-    link = f"https://t.me/{client.username}?start={base64_string}"
-    
-    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Share URL", url=f'https://telegram.me/share/url?url={link}')]])
-    await first.reply_text(f"<b>Here is your secondary channel link</b>\n\n{link}", quote=True, reply_markup=reply_markup)
-    await msg.delete()
