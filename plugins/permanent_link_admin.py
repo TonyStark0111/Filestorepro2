@@ -12,8 +12,7 @@ async def permanent_info(client: Client, message: Message):
     """Show permanent link system information"""
     
     if PERMANENT_LINKS and BLOGSPOT_URL:
-        status = f"""
-✅ **PERMANENT LINK SYSTEM ACTIVE**
+        status = f"""✅ **PERMANENT LINK SYSTEM ACTIVE**
 
 **Configuration:**
 • Blogspot URL: `{BLOGSPOT_URL}`
@@ -36,11 +35,9 @@ async def permanent_info(client: Client, message: Message):
 1. Edit Blogspot HTML file
 2. Change: `const CURRENT_BOT_USERNAME = "new_bot_username";`
 3. Save and publish
-4. Done! All existing links will work
-        """
+4. Done! All existing links will work"""
     else:
-        status = f"""
-❌ **DIRECT LINK SYSTEM ACTIVE**
+        status = f"""❌ **DIRECT LINK SYSTEM ACTIVE**
 
 **Current Links:**
 • `/batch` - Direct Telegram links
@@ -51,3 +48,106 @@ async def permanent_info(client: Client, message: Message):
 
 **Enable Permanent Links:**
 Add to config.py or environment:
+
+    
+    await message.reply_text(status)
+
+@Bot.on_message(filters.private & admin & filters.command('get_html'))
+async def get_html_files(client: Client, message: Message):
+    """Send HTML files for Blogspot"""
+    
+    countdown_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting To Your Link</title>
+    <style>
+        #countdown {
+            font-size: 48px;
+            font-weight: bold;
+            color: yellow;
+            display: inline;
+        }
+        .mixed-color {
+            background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 48px;
+            font-weight: bold;
+        }
+        body {
+            background-color: black;
+            color: white;
+            text-align: center;
+            margin-top: 20%;
+        }
+    </style>
+    <script type="text/javascript">
+        // SET YOUR BOT USERNAME HERE (without @)
+        const CURRENT_BOT_USERNAME = "YOUR_BOT_USERNAME";
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const linkParam = urlParams.get('Tech_VJ');
+            
+            if (linkParam) {
+                let countdown = 10;
+                const countdownElement = document.getElementById('countdown');
+                countdownElement.textContent = countdown;
+
+                const countdownInterval = setInterval(function() {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        const telegramUrl = `https://telegram.me/${CURRENT_BOT_USERNAME}?start=${linkParam}`;
+                        window.location.href = telegramUrl;
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Redirecting To Your Link</h1>
+    <p><b>Powered by Permanent Link System</b></p>
+    <p><b>Redirecting In <span class="mixed-color" id="countdown">10</span> Seconds...</b></p>
+    <p><small>If redirect doesn't work, click <a href="#" id="directLink">here</a></small></p>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const linkParam = urlParams.get('Tech_VJ');
+            if (linkParam) {
+                const directLink = document.getElementById('directLink');
+                directLink.href = `https://telegram.me/${CURRENT_BOT_USERNAME}?start=${linkParam}`;
+                directLink.textContent = "Direct Link";
+            }
+        });
+    </script>
+</body>
+</html>"""
+    
+    instructions = """📝 **INSTRUCTIONS:**
+
+1. **Replace `YOUR_BOT_USERNAME`** with your actual bot username (without @)
+2. **Upload to Blogspot:**
+   - Go to https://www.blogger.com
+   - Create new post or page
+   - Switch to HTML editor
+   - Paste the code below
+   - Publish
+3. **Get the URL** and set as `BLOGSPOT_URL` in config
+4. **When bot gets banned:**
+   - Create new bot
+   - Update bot token
+   - Change `CURRENT_BOT_USERNAME` in Blogspot HTML
+   - Save and publish
+   - All existing links will work!
+
+**HTML Code:**"""
+    
+    await message.reply_text(instructions)
+    await message.reply_text(f"```html\n{countdown_html}\n```")
